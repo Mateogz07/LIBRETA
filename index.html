@@ -1031,6 +1031,10 @@ function vMas() {
     <div class="seg" style="margin:14px 0 0">${[["auto", "Automático"], ["light", "Claro"], ["dark", "Oscuro"]].map(([k, n]) => `<button class="${tema().modo === k ? "on" : ""}" data-tmodo="${k}">${n}</button>`).join("")}</div>
   </div>
 
+  ${secc("Categorías")}
+  <div class="list"><button class="item" data-accion="categorias"><span class="ico">🏷️</span><span class="grow"><span class="t">Administrar categorías</span>
+    <span class="s">${data.config.categorias.filter(c => c.tipo === "gasto").length} de gasto · ${data.config.categorias.filter(c => c.tipo === "ingreso").length} de ingreso</span></span>${chev}</button></div>
+
   ${secc("Registros rápidos")}
   <div class="list"><button class="item" data-accion="favoritos"><span class="ico">⭐</span><span class="grow"><span class="t">Administrar rápidos</span>
     <span class="s">${data.config.favoritos.length} guardado${data.config.favoritos.length === 1 ? "" : "s"}</span></span>${chev}</button></div>
@@ -1118,7 +1122,8 @@ function hojaMovimiento(mov, preset = {}) {
         ${[["gasto","Gasto"],["ingreso","Ingreso"],["transferencia","Transferencia"]].map(([k, n]) => `<button class="${T===k?"on":""}" data-tipo="${k}">${n}</button>`).join("")}</div>`}
       <div class="field"><label for="fMonto">Monto</label><input id="fMonto" class="money" inputmode="numeric" placeholder="$0" value="${esc(st.monto)}"></div>
       ${especial || esTr ? "" : `<div class="field"><label>Categoría</label><div class="catgrid">
-        ${cats.map(c => `<button type="button" class="${c.id===st.catSel?"on":""}" data-cat="${c.id}"><span class="e">${c.icono}</span>${esc(c.nombre)}</button>`).join("")}</div>
+        ${cats.map(c => `<button type="button" class="${c.id===st.catSel?"on":""}" data-cat="${c.id}"><span class="e">${c.icono}</span>${esc(c.nombre)}</button>`).join("")}
+        <button type="button" id="nuevaCat" style="box-shadow:none;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,transparent);color:var(--accent)"><span class="e">＋</span>Nueva</button></div>
         <p class="hint" id="bHint" style="margin:6px 0 0"></p></div>`}
       ${esTr ? `<div class="row2">
           <div class="field"><label for="fFuente">Desde</label><select id="fFuente">${data.config.cuentas.map(c => `<option value="c:${c.id}" ${st.fuente==="c:"+c.id?"selected":""}>${esc(c.icono||"")} ${esc(c.nombre)}</option>`).join("")}</select></div>
@@ -1186,6 +1191,9 @@ function hojaMovimiento(mov, preset = {}) {
       }
       s.querySelectorAll("[data-fav]").forEach(b => b.onclick = () => registrarFavorito(b.dataset.fav));
       s.querySelectorAll("[data-tipo]").forEach(b => b.onclick = () => { sync(); st.tipo = b.dataset.tipo; if (st.tipo === "transferencia") st.gmf = null; dibujar(); });
+      const nc = $s("#nuevaCat");
+      if (nc) nc.onclick = () => { sync(); hojaCategoria(null, T === "ingreso" ? "ingreso" : "gasto", k => hojaMovimiento(mov, {
+        tipo: T, monto: num(st.monto), catSel: k?.id, fuente: st.fuente, nota: st.nota, cuotas: st.nCuotas })); };
       s.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { st.catSel = b.dataset.cat; s.querySelectorAll("[data-cat]").forEach(x => x.classList.toggle("on", x === b)); pista(); });
       $s("#fFuente").onchange = e => { st.fuente = e.target.value; if (esTr) { st.gmf = !!cuenta(st.fuente.slice(2))?.gmf; $s("#fGmf").checked = st.gmf; gmfV(); } sim(); };
       if ($s("#fDestino")) $s("#fDestino").onchange = e => st.destino = e.target.value;
@@ -2084,6 +2092,80 @@ function hojaFavoritos() {
   });
 }
 
+
+/* ============ Categorías ============ */
+const EMOJIS = ["🛒","🍔","☕","🍺","🚌","⛽","🚗","🏍️","🏠","💡","📱","💻","💊","🏋️","💈","👕","🎉","🎬","🎮","✈️","🐶","👶","📚","🎓","🎁","🔧","🧾","💳","🏦","💼","🧰","📈","🛍️","🍼","🧴","❤️"];
+function usosCategoria(id) {
+  return {
+    movs: todos().filter(m => m.categoriaId === id).length,
+    fijos: data.config.recurrentes.filter(r => r.categoriaId === id).length,
+    bolsillo: data.config.bolsillos.find(b => b.categoriaId === id) || null,
+  };
+}
+function hojaCategorias(tipo = "gasto") {
+  const cats = data.config.categorias.filter(c => c.tipo === tipo);
+  abrir(`<h3>Categorías</h3>
+    <div class="seg">${[["gasto", "Gastos"], ["ingreso", "Ingresos"]].map(([k, n]) => `<button class="${tipo === k ? "on" : ""}" data-tcat="${k}">${n}</button>`).join("")}</div>
+    <div class="list">${cats.map(c => { const u = usosCategoria(c.id);
+      return `<button class="item" data-editcat="${c.id}"><span class="ico">${c.icono}</span>
+        <span class="grow"><span class="t">${esc(c.nombre)}</span><span class="s">${u.movs ? `${u.movs} movimiento${u.movs === 1 ? "" : "s"}` : "Sin movimientos"}${u.bolsillo ? " · tiene bolsillo" : ""}</span></span>${chev}</button>`; }).join("")}</div>
+    <div class="actions"><button class="btn full" id="nueva">+ Nueva categoría de ${tipo === "gasto" ? "gasto" : "ingreso"}</button></div>`, s => {
+    s.querySelectorAll("[data-tcat]").forEach(b => b.onclick = () => hojaCategorias(b.dataset.tcat));
+    s.querySelectorAll("[data-editcat]").forEach(b => b.onclick = () => hojaCategoria(b.dataset.editcat, tipo, () => hojaCategorias(tipo)));
+    s.querySelector("#nueva").onclick = () => hojaCategoria(null, tipo, () => hojaCategorias(tipo));
+  });
+}
+function hojaCategoria(id, tipo, alTerminar) {
+  const c = data.config.categorias.find(x => x.id === id);
+  tipo = c?.tipo || tipo || "gasto";
+  const u = c ? usosCategoria(c.id) : null;
+  const otras = data.config.categorias.filter(x => x.tipo === tipo && x.id !== id);
+  let icono = c?.icono || (tipo === "gasto" ? "🛍️" : "💼");
+  abrir(`<h3>${c ? "Editar categoría" : `Nueva categoría de ${tipo === "gasto" ? "gasto" : "ingreso"}`}</h3>
+    <div class="row2" style="grid-template-columns:70px 1fr">
+      <div class="field"><label for="kIcono">Ícono</label><input id="kIcono" maxlength="4" style="text-align:center;font-size:1.4rem;padding:8px" value="${esc(icono)}"></div>
+      <div class="field"><label for="kNombre">Nombre</label><input id="kNombre" maxlength="24" placeholder="${tipo === "gasto" ? "Ej: Mascota, Gimnasio, Moto" : "Ej: Arriendo que recibo, Ventas"}" value="${esc(c?.nombre || "")}"></div>
+    </div>
+    <div class="catgrid" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px">${EMOJIS.map(e => `<button type="button" class="${e === icono ? "on" : ""}" data-emo="${e}" style="padding:8px 0"><span class="e">${e}</span></button>`).join("")}</div>
+    <button class="btn full" id="ok">Guardar</button>
+    ${c ? `<div class="h4">Eliminar</div>
+      ${u.bolsillo ? `<p class="hint">Esta categoría tiene el bolsillo <b>${esc(u.bolsillo.nombre)}</b>. Elimina o cambia ese bolsillo primero.</p>`
+        : otras.length ? `${u.movs || u.fijos ? `<div class="field"><label for="kMover">Pasar sus ${u.movs + u.fijos} registro${u.movs + u.fijos === 1 ? "" : "s"} a</label>
+            <select id="kMover">${otras.map(o => `<option value="${o.id}">${o.icono} ${esc(o.nombre)}</option>`).join("")}</select></div>` : ""}
+          <button class="btn danger full" id="del">Eliminar categoría</button>`
+        : `<p class="hint">Debe quedar al menos una categoría de este tipo.</p>`}` : ""}`, s => {
+    const ic = s.querySelector("#kIcono");
+    s.querySelectorAll("[data-emo]").forEach(b => b.onclick = () => { ic.value = b.dataset.emo; s.querySelectorAll("[data-emo]").forEach(x => x.classList.toggle("on", x === b)); });
+    s.querySelector("#ok").onclick = () => {
+      const nombre = s.querySelector("#kNombre").value.trim(), em = ic.value.trim() || "🏷️";
+      if (!nombre) return toast("Escribe un nombre");
+      if (data.config.categorias.some(x => x.tipo === tipo && x.id !== id && norm(x.nombre) === norm(nombre))) return toast("Ya tienes una categoría con ese nombre");
+      let obj;
+      if (c) { c.nombre = nombre; c.icono = em; obj = c; }
+      else { obj = { id: uid(), nombre, icono: em, tipo };
+        const otros = data.config.categorias.findIndex(x => x.tipo === tipo && /^otros/i.test(x.nombre));
+        data.config.categorias.splice(otros >= 0 ? otros : data.config.categorias.length, 0, obj); }
+      guardarConfig(); render(); toast(c ? "Categoría actualizada" : "Categoría creada");
+      alTerminar ? alTerminar(obj) : cerrar();
+    };
+    const del = s.querySelector("#del");
+    if (del) del.onclick = () => {
+      const destino = s.querySelector("#kMover")?.value;
+      if (!confirm(`¿Eliminar "${c.nombre}"?${destino ? " Sus registros pasarán a la categoría elegida." : ""}`)) return;
+      if (destino) {
+        Object.keys(data.meses).forEach(ym => { let cambio = false;
+          data.meses[ym].movs.forEach(m => { if (m.categoriaId === c.id) { m.categoriaId = destino; cambio = true; } });
+          if (cambio) guardarMes(ym); });
+        data.config.recurrentes.forEach(r => { if (r.categoriaId === c.id) r.categoriaId = destino; });
+        data.config.favoritos.forEach(f => { if (f.categoriaId === c.id) f.categoriaId = destino; });
+      }
+      data.config.categorias = data.config.categorias.filter(x => x.id !== c.id);
+      guardarConfig(); render(); toast("Categoría eliminada");
+      alTerminar ? alTerminar(null) : cerrar();
+    };
+  });
+}
+
 /* ============ Respaldo ============ */
 async function exportar() {
   const txt = JSON.stringify({ app: "libreta", version: 1, exportado: new Date().toISOString(), ...data }, null, 2);
@@ -2180,7 +2262,7 @@ document.addEventListener("click", e => {
   else if (d.editcuenta) hojaCuenta(d.editcuenta);
   else if (d.accion) ({
     nuevo: () => hojaMovimiento(), nuevoFijo: () => hojaFijo(), nuevaDeuda: () => hojaDeuda(), nuevaMeta: () => hojaMeta(),
-    nuevaCuenta: () => hojaCuenta(), perfil: hojaPerfil, nuevaTarjeta: () => hojaTarjeta(), nuevoBolsillo: () => hojaBolsillo(), nuevaPersona: () => hojaPrestamo(null, "di"), favoritos: hojaFavoritos, instalar, claude: pedirClaude, gemini: hojaGemini, desglose: hojaDesglose, proximos: hojaProximos, consejos: hojaConsejos,
+    nuevaCuenta: () => hojaCuenta(), perfil: hojaPerfil, nuevaTarjeta: () => hojaTarjeta(), nuevoBolsillo: () => hojaBolsillo(), nuevaPersona: () => hojaPrestamo(null, "di"), favoritos: hojaFavoritos, instalar, claude: pedirClaude, gemini: hojaGemini, categorias: () => hojaCategorias(), desglose: hojaDesglose, proximos: hojaProximos, consejos: hojaConsejos,
     fijosAdmin: hojaFijosAdmin, prestaciones: hojaPrestaciones, legal: hojaLegal, exportar, importar: () => $("#archivo").click(), borrarTodo,
   })[d.accion]?.();
 });

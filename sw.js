@@ -1,6 +1,6 @@
 // Libreta · hace que la app abra y funcione sin internet, como una app instalada.
 // Al publicar una versión nueva, sube este número (v11 → v12) para que los celulares la actualicen.
-const VERSION = "libreta-v11";
+const VERSION = "libreta-v12";
 const ARCHIVOS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./apple-touch-icon.png",
