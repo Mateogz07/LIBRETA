@@ -64,6 +64,7 @@
   --shadow:none; --edge:var(--line); color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
   font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
@@ -97,6 +98,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .billete .sub{margin:0 0 16px;font-size:.93rem;color:rgba(255,255,255,.86)}
 .billete .sub b{color:#fff}
 .billete .bar{background:rgba(255,255,255,.18)}
+.billete .proy{margin:-6px 0 16px;font-size:.84rem;color:rgba(255,255,255,.78);padding-top:10px;border-top:1px solid rgba(255,255,255,.16)}
+.billete .proy b{color:#fff}
 .billete .more{color:#fff;opacity:.9}
 .hero{padding:8px 2px 4px}
 .hero .lbl{color:var(--muted);font-weight:600;margin:0}
@@ -137,7 +140,7 @@ button.item:active{background:var(--soft)}
 .chev{color:var(--muted);font-size:1.35rem;line-height:1;opacity:.5;margin-left:-2px}
 .mini{display:block;height:5px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
 .mini span{display:block;height:100%;border-radius:3px}
-.day{font-size:.84rem;color:var(--muted);font-weight:700;margin:20px 4px 8px;text-transform:capitalize}
+.day{font-size:.84rem;color:var(--muted);font-weight:700;margin:20px 4px 8px}
 .empty{padding:24px 18px;text-align:center;color:var(--muted)}
 .empty.sm{padding:14px}
 .card{background:var(--surface);border-radius:var(--r-lg);padding:16px;margin-bottom:10px;box-shadow:var(--shadow),0 0 0 1px var(--edge)}
@@ -150,6 +153,17 @@ button.item:active{background:var(--soft)}
 .stat3 div+div{border-left:1px solid var(--line)}
 .stat3 small{color:var(--muted);font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat3 b{font-family:var(--display);font-size:1.06rem;font-weight:700;white-space:nowrap;letter-spacing:-.01em}
+.balance{padding:0;overflow:hidden;margin-top:10px}
+.bal-top{padding:16px 18px 14px;display:grid;gap:2px}
+.bal-top small{color:var(--muted);font-weight:600;font-size:.84rem}
+.bal-top b{font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.bal-top b.pos{color:var(--in)} .bal-top b.neg{color:var(--out)}
+.bal-top span{color:var(--muted);font-size:.86rem}
+.bal-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);padding:12px 4px}
+.bal-grid div{text-align:center;display:grid;gap:2px;min-width:0}
+.bal-grid div+div{border-left:1px solid var(--line)}
+.bal-grid small{color:var(--muted);font-size:.78rem;font-weight:600}
+.bal-grid b{font-family:var(--display);font-size:1.02rem;white-space:nowrap}
 .strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 8px}
 .pk{flex:none;width:146px;border:0;background:var(--surface);border-radius:var(--r-lg);padding:13px 14px;text-align:left;display:grid;gap:1px;color:inherit;box-shadow:var(--shadow),0 0 0 1px var(--edge)}
 .pk-i{font-size:1.3rem;margin-bottom:6px}
@@ -290,7 +304,7 @@ const hoy = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.get
 const ymOf = f => f.slice(0, 7);
 const ymShift = (ym, k) => { let [y, m] = ym.split("-").map(Number); m += k; while (m > 12) { m -= 12; y++; } while (m < 1) { m += 12; y--; } return `${y}-${pad(m)}`; };
 const mesNombre = ym => { const [y, m] = ym.split("-").map(Number); return new Date(y, m-1, 1).toLocaleDateString("es-CO", { month: "long", year: "numeric" }); };
-const diaNombre = f => { const [y, m, d] = f.split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "short" }); };
+const diaNombre = f => { const [y, m, d] = f.split("-").map(Number); const t = new Date(y, m-1, d).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "short" }).replace(".", ""); return t.charAt(0).toUpperCase() + t.slice(1); };
 const mesesEntre = (desdeYm, hastaYm) => { const [a, b] = desdeYm.split("-").map(Number); const [c, d] = hastaYm.split("-").map(Number); return (c - a) * 12 + (d - b); };
 const clone = o => JSON.parse(JSON.stringify(o));
 const ultimoDia = ym => { const [y, m] = ym.split("-").map(Number); return new Date(y, m, 0).getDate(); };
@@ -313,7 +327,7 @@ function configInicial() {
       ["Educación","📚","gasto"],["Tecnología","🔌","gasto"],["Regalos","🎁","gasto"],["Otros","📦","gasto"],
       ["Salario","💼","ingreso"],["Freelance","🧰","ingreso"],["Otros ingresos","➕","ingreso"],
     ].map(([nombre, icono, tipo]) => ({ id: uid(), nombre, icono, tipo })),
-    recurrentes: [], deudas: [], metas: [], tarjetas: [], bolsillos: [], perfil: null,
+    recurrentes: [], deudas: [], metas: [], tarjetas: [], bolsillos: [], favoritos: [], personas: [], perfil: null,
     legal: { anio: 2026, smmlv: 1750905, aux: 249095 }, updatedAt: Date.now(),
   };
 }
@@ -436,7 +450,7 @@ const saldoTarjeta = t => vigentesTarjeta(t).reduce((s, v) => s + v.saldo, 0);
 /* ============ Bolsillos ============ */
 const bolsillosActivos = ym => data.config.bolsillos.filter(b => b.activo !== false && (!ym || b.desde <= ym));
 const bolsilloDeCat = cid => data.config.bolsillos.find(b => b.activo !== false && b.categoriaId === cid);
-const consumeBolsillo = (b, m) => (m.tipo === "gasto" || m.tipo === "credito") && m.categoriaId === b.categoriaId && !m.recurrenteId;
+const consumeBolsillo = (b, m) => (m.tipo === "gasto" || m.tipo === "credito" || (m.tipo === "prestamo" && m.dir === "fiado")) && m.categoriaId === b.categoriaId && !m.recurrenteId;
 const gastadoBolsillo = (b, ym) => movsMes(ym).filter(m => consumeBolsillo(b, m)).reduce((s, m) => s + m.monto, 0);
 function disponibleBolsillo(b, ym, prof = 0) {
   if (ym < b.desde) return 0;
@@ -475,17 +489,18 @@ function resumen(ym) {
     else if (m.tipo === "ahorro") ahorro += m.monto;
     else if (m.tipo === "credito") credito += m.monto;
     else if (m.tipo === "transferencia") variables += m.gmf || 0;
-    else if (m.tipo === "prestamo") prestamos += (m.dir === "di" || m.dir === "abono") ? m.monto : -m.monto;
+    else if (m.tipo === "prestamo") { prestamos += (m.dir === "di" || m.dir === "abono") ? m.monto : -m.monto; if (m.dir === "fiado") variables += m.monto; }
   }
   const actual = ymOf(hoy());
   const pendFijos = data.config.recurrentes.filter(r => r.activo !== false && !movs.some(m => m.recurrenteId === r.id));
   const pendDeudas = data.config.deudas.filter(d => saldoDeuda(d) > 0 && !movs.some(m => m.deudaId === d.id));
   const pendTarjetas = data.config.tarjetas.map(t => ({ t, total: cuotaTarjetaMes(t, ym).total })).filter(x => x.total > 0 && !pagoTarjetaRegistrado(x.t, ym));
   const cuentaPend = ym >= actual;
-  const pendiente = cuentaPend ? pendFijos.reduce((s, r) => s + r.monto, 0) + pendDeudas.reduce((s, d) => s + Math.min(d.cuota, saldoDeuda(d)), 0) + pendTarjetas.reduce((s, x) => s + x.total, 0) : 0;
+  const pendPersonas = cuentaPend ? compromisosPersonas().filter(x => x.lado === "debo" && x.m.vence && ymOf(x.m.vence) <= ym) : [];
+  const pendiente = cuentaPend ? pendFijos.reduce((s, r) => s + r.monto, 0) + pendDeudas.reduce((s, d) => s + Math.min(d.cuota, saldoDeuda(d)), 0) + pendTarjetas.reduce((s, x) => s + x.total, 0) + pendPersonas.reduce((s, x) => s + x.pend, 0) : 0;
   const reservado = cuentaPend ? bolsillosActivos(ym).reduce((s, b) => s + Math.max(0, disponibleBolsillo(b, ym) - gastadoBolsillo(b, ym)), 0) : 0;
   const libre = ingresos - variables - fijos - deudas - ahorro - pendiente - reservado - prestamos;
-  return { ingresos, variables, fijos, deudas, ahorro, credito, prestamos, pendiente, reservado, libre, pendFijos, pendDeudas, pendTarjetas, cuentaPend };
+  return { ingresos, variables, fijos, deudas, ahorro, credito, prestamos, pendiente, reservado, libre, pendFijos, pendDeudas, pendTarjetas, pendPersonas, cuentaPend };
 }
 const pagadoDeuda = d => todos().filter(m => m.deudaId === d.id).reduce((s, m) => s + m.monto, 0);
 const saldoDeuda = d => Math.max(0, d.saldoInicial - pagadoDeuda(d));
@@ -504,6 +519,25 @@ function saldoCuenta(c) {
 /* Personas: saldo > 0 = te debe; < 0 = le debes */
 const movsPersona = id => todos().filter(m => m.tipo === "prestamo" && m.personaId === id);
 const saldoPersona = id => movsPersona(id).reduce((s, m) => s + ((m.dir === "di" || m.dir === "abono") ? m.monto : -m.monto), 0);
+const fechaCorta = f => { const [y, m, d] = f.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("es-CO", { day: "numeric", month: "short" }).replace(".", ""); };
+// Qué queda pendiente de cada préstamo o fiado. Los pagos cubren primero lo que vence antes.
+function pendientesPersona(id) {
+  const ms = movsPersona(id), out = { meDeben: [], debo: [] };
+  for (const [lado, crea, paga] of [["meDeben", ["di"], "cobro"], ["debo", ["recibi", "fiado"], "abono"]]) {
+    let pagado = ms.filter(m => m.dir === paga).reduce((s, m) => s + m.monto, 0);
+    ms.filter(m => crea.includes(m.dir))
+      .sort((a, b) => (a.vence || "9999").localeCompare(b.vence || "9999") || a.fecha.localeCompare(b.fecha))
+      .forEach(m => { const usa = Math.min(pagado, m.monto); pagado -= usa; if (m.monto - usa > 0) out[lado].push({ m, pend: m.monto - usa }); });
+  }
+  return out;
+}
+const compromisosPersonas = () => data.config.personas.flatMap(pe => { const p = pendientesPersona(pe.id);
+  return [...p.debo.map(x => ({ ...x, pe, lado: "debo" })), ...p.meDeben.map(x => ({ ...x, pe, lado: "meDeben" }))]; });
+function proximoPagoFecha() {
+  const h = hoy(), ym = ymOf(h);
+  for (const y of [ym, ymShift(ym, 1)]) for (const p of pagosSalario(y).sort((a, b) => a.dia - b.dia)) { const f = `${y}-${pad(p.dia)}`; if (f > h) return f; }
+  return null;
+}
 function personaPorNombre(nombre) {
   const n = nombre.trim(); if (!n) return null;
   let p = data.config.personas.find(x => norm(x.nombre) === norm(n));
@@ -654,13 +688,19 @@ function consejos(ym) {
   if (p.tipo === "independiente" && n.aportesIndep && !data.config.recurrentes.some(x => /pila|seguridad social/i.test(x.nombre)))
     add("atencion", "🧾", "Agenda tu seguridad social",
       `Como independiente pagas unos ${fmt(n.aportesIndep)} al mes por PILA. Agrégalo como gasto fijo para que no te tome por sorpresa.`);
-  data.config.personas.forEach(pe => { const sp = saldoPersona(pe.id); if (sp <= 0) return;
-    const ult = movsPersona(pe.id).map(m => m.fecha).sort().pop();
-    const dias = ult ? Math.round((new Date(hoy()) - new Date(ult)) / 864e5) : 0;
-    if (dias > 30) add("idea", "🤝", `${pe.nombre} te debe ${fmt(sp)}`, `Van ${dias} días desde el último movimiento. Un recordatorio amable a tiempo evita malentendidos.`); });
+  const hh = hoy(), enDias = f => Math.round((new Date(f) - new Date(hh)) / 864e5);
+  compromisosPersonas().forEach(x => { const que = x.m.nota ? ` (${x.m.nota})` : "";
+    if (x.lado === "debo" && x.m.vence) { const n = enDias(x.m.vence);
+      if (n < 0) add("alerta", "🤝", `Se venció lo que le debes a ${x.pe.nombre}`, `${fmt(x.pend)}${que} desde el ${fechaCorta(x.m.vence)}. Págalo o acuerda con ${x.pe.nombre} una nueva fecha y cámbiala tocando la deuda.`);
+      else if (n <= 3) add("atencion", "🤝", n === 0 ? `Hoy le pagas a ${x.pe.nombre}` : `En ${n} día${n === 1 ? "" : "s"} le pagas a ${x.pe.nombre}`, `${fmt(x.pend)}${que}. Ten la plata lista.`);
+    }
+    if (x.lado === "meDeben") {
+      if (x.m.vence && enDias(x.m.vence) < 0) add("atencion", "🤝", `${x.pe.nombre} debía pagarte el ${fechaCorta(x.m.vence)}`, `Te debe ${fmt(x.pend)}${que}. Un recordatorio amable a tiempo evita malentendidos.`);
+      else if (!x.m.vence && enDias(x.m.fecha) < -30) add("idea", "🤝", `${x.pe.nombre} te debe ${fmt(x.pend)}`, `Van ${-enDias(x.m.fecha)} días${que}. Ponle una fecha de pago para que la app te recuerde.`);
+    } });
   if (!col) { let ult = 0; try { ult = +localStorage.getItem(LS + "-respaldo") || 0; } catch (e) {}
     if (todos().length > 10 && Date.now() - ult > 30 * 864e5) add("atencion", "💾", "Haz un respaldo",
-      "Tus datos viven solo en este celular. Descarga un respaldo (en ⚙️) y guárdalo en Drive o mándatelo por WhatsApp."); }
+      "Tus datos viven solo en este celular. Toca aquí y mándatelo por WhatsApp o guárdalo en Drive."); }
   const orden = { alerta: 0, atencion: 1, idea: 2 };
   return out.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
 }
@@ -788,8 +828,10 @@ function filaMov(m) {
     lugar = m.gmf ? `Transferencia · 4x1000 ${fmt(m.gmf)}` : "Transferencia"; }
   if (m.tipo === "ajuste") { icono = "⚖️"; titulo = "Ajuste de saldo"; cls = m.monto < 0 ? "out" : "in"; signo = m.monto < 0 ? "−" : "+"; }
   if (m.tipo === "prestamo") { const pn = persona(m.personaId)?.nombre || "?"; icono = "🤝";
-    titulo = { di: `Le prestaste a ${pn}`, recibi: `${pn} te prestó`, cobro: `${pn} te pagó`, abono: `Le pagaste a ${pn}` }[m.dir];
-    const sale = m.dir === "di" || m.dir === "abono"; cls = sale ? "out" : "in"; signo = sale ? "−" : "+"; }
+    titulo = { di: `Le prestaste a ${pn}`, recibi: `${pn} te prestó`, cobro: `${pn} te pagó`, abono: `Le pagaste a ${pn}`, fiado: `Le quedaste debiendo a ${pn}` }[m.dir];
+    const sale = m.dir === "di" || m.dir === "abono"; cls = m.dir === "fiado" ? "debt" : sale ? "out" : "in"; signo = m.dir === "fiado" ? "" : sale ? "−" : "+";
+    if (m.dir === "fiado") { icono = cat(m.categoriaId)?.icono || "🧾"; lugar = "Fiado"; }
+    if (m.vence && ["di", "recibi", "fiado"].includes(m.dir)) lugar += ` · para el ${fechaCorta(m.vence)}`; }
   return `<button class="item" data-mov="${m.id}" data-ym="${ymOf(m.fecha)}">
     <span class="ico">${icono}</span>
     <span class="grow"><span class="t">${esc(m.nota || titulo)}</span><span class="s">${esc(m.nota ? titulo + " · " : "")}${esc(lugar)}</span></span>
@@ -805,9 +847,22 @@ const tipHtml = t => `<div class="tip ${t.nivel}"><span class="ico">${t.icono}</
 
 function ritmo(ym) {
   if (ymOf(hoy()) !== ym) return null;
-  const r = resumen(ym), falta = salarioPendiente(ym).reduce((s, x) => s + x.monto, 0), libre = r.libre + falta;
-  const rest = ultimoDia(ym) - new Date().getDate() + 1;
-  return { libre, falta, rest, porDia: libre > 0 ? Math.floor(libre / rest / 1000) * 1000 : 0 };
+  const r = resumen(ym), pend = salarioPendiente(ym), falta = pend.reduce((s, x) => s + x.monto, 0);
+  const libre = r.libre + falta;                       // proyección: cómo terminaría el mes si todo llega
+  const d = new Date().getDate(), u = ultimoDia(ym), rest = u - d + 1;
+  const disponible = data.config.cuentas.reduce((s, c) => s + saldoCuenta(c), 0);   // plata real hoy
+  const prox = [...pend].sort((a, b) => a.dia - b.dia)[0] || null;                   // próximo pago por llegar
+  const hasta = prox ? Math.max(prox.dia, d) : u + 1;
+  const pagosAntes = proximos(ym).filter(p => !p.entra && p.dia < hasta).reduce((s, p) => s + p.monto, 0);
+  const diasHasta = prox ? Math.max(1, prox.dia - d) : rest;
+  const usable = disponible - pagosAntes;
+  const base = prox ? usable : Math.min(usable, libre);
+  const porDia = base > 0 ? Math.floor(base / diasHasta / 1000) * 1000 : 0;
+  return { libre, falta, rest, disponible, prox, pagosAntes, diasHasta, usable, porDia };
+}
+function cuandoLlega(p) {
+  const n = p.dia - new Date().getDate();
+  return n < 0 ? `debió llegar el día ${p.dia}` : n === 0 ? "hoy" : n === 1 ? "mañana" : `en ${n} días, el día ${p.dia}`;
 }
 function segmentos(r, libre) {
   return [
@@ -831,13 +886,19 @@ function proximos(ym) {
     ...r.pendFijos.map(x => ({ ico: cat(x.categoriaId)?.icono || "📅", nombre: x.nombre, monto: x.monto, dia: x.dia, attrs: `data-pagar="fijo:${x.id}"` })),
     ...r.pendDeudas.map(x => ({ ico: "🏦", nombre: x.nombre, monto: Math.min(x.cuota, saldoDeuda(x)), dia: x.dia, attrs: `data-pagar="deuda:${x.id}"` })),
     ...r.pendTarjetas.map(x => ({ ico: "💳", nombre: x.t.nombre, monto: x.total, dia: x.t.diaPago, attrs: `data-pagar="tarjeta:${x.t.id}"` })),
+    ...r.pendPersonas.map(x => ({ ico: "🤝", nombre: `${x.pe.nombre}${x.m.nota ? " · " + x.m.nota : ""}`, monto: x.pend, vence: x.m.vence,
+      dia: ymOf(x.m.vence) < ym ? 0 : +x.m.vence.slice(8), attrs: `data-prestamo="${x.pe.id}|abono|${x.m.id}"` })),
   ];
-  return [...sal, ...pagos].sort((a, b) => a.dia - b.dia);
+  const cobros = compromisosPersonas().filter(x => x.lado === "meDeben" && x.m.vence && ymOf(x.m.vence) <= ym)
+    .map(x => ({ ico: "🤝", nombre: `${x.pe.nombre} te paga${x.m.nota ? " · " + x.m.nota : ""}`, monto: x.pend, vence: x.m.vence, entra: true,
+      dia: ymOf(x.m.vence) < ym ? 0 : +x.m.vence.slice(8), attrs: `data-prestamo="${x.pe.id}|cobro|${x.m.id}"` }));
+  return [...sal, ...pagos, ...cobros].sort((a, b) => a.dia - b.dia);
 }
 function cuandoTxt(p) {
+  if (p.vence && ymOf(p.vence) < ui.mes) return `<span style="color:var(--out)">${p.entra ? "Debía pagarte" : "Venció"} el ${fechaCorta(p.vence)}</span>`;
   if (ymOf(hoy()) !== ui.mes) return `Día ${p.dia}`;
   const d = new Date().getDate(), n = p.dia - d;
-  if (n < 0) return `<span style="color:var(--out)">${p.entra ? "Debió llegar" : "Venció"} el día ${p.dia}</span>`;
+  if (n < 0) return `<span style="color:var(--out)">${p.vence ? (p.entra ? "Debía pagarte" : "Venció") : (p.entra ? "Debió llegar" : "Venció")} el día ${p.dia}</span>`;
   if (n === 0) return "Hoy"; if (n === 1) return "Mañana";
   return `En ${n} días · día ${p.dia}`;
 }
@@ -848,19 +909,30 @@ const filaProx = p => `<button class="item" ${p.attrs}><span class="ico">${p.ico
 /* ================= INICIO ================= */
 function vInicio() {
   const r = resumen(ui.mes), p = data.config.perfil, rt = ritmo(ui.mes);
-  const libre = rt ? rt.libre : r.libre, falta = rt?.falta || 0;
+  const libre = rt ? rt.libre : r.libre;
   const prox = proximos(ui.mes), tips = consejos(ui.mes), bs = bolsillosActivos(ui.mes);
   const ult = [...movsMes(ui.mes)].sort((a, b) => (b.fecha + b.creado).localeCompare(a.fecha + a.creado)).slice(0, 3);
-  const subTxt = rt && libre > 0 ? (rt.rest === 1 ? `Es el último día del mes` : `Unos <b>${fmt(rt.porDia)}</b> por día para los ${rt.rest} días que quedan`)
-    : libre < 0 ? "Tus compromisos superan lo que entra este mes" : `Entraron ${fmt(r.ingresos)} este mes`;
+  let lbl, big, sub, proy = "";
+  if (rt) {
+    lbl = "Disponible hoy"; big = rt.disponible;
+    if (rt.prox) {
+      sub = `Tu ${rt.prox.nombre.toLowerCase()} (+${fmt(rt.prox.monto)}) llega ${cuandoLlega(rt.prox)}.` +
+        (rt.usable > 0 ? ` Hasta entonces, unos <b>${fmt(rt.porDia)}</b> por día.`
+          : rt.pagosAntes > 0 ? ` Antes vencen pagos por ${fmt(rt.pagosAntes)}: ve con cuidado.` : " Hasta entonces, evita gastos.");
+    } else sub = rt.rest === 1 ? "Es el último día del mes." : rt.porDia > 0 ? `Unos <b>${fmt(rt.porDia)}</b> por día para los ${rt.rest} días que quedan.` : "Lo que tienes no alcanza para lo que falta por pagar este mes.";
+    if (rt.disponible < 0) sub = "Tus cuentas suman negativo: cuádralas con tu banco en ⚙️ → Cuentas. " + sub;
+    proy = rt.libre >= 0 ? `Si todo llega como está previsto, terminarías el mes con <b>${fmt(rt.libre)}</b> libres.`
+      : `Aun con todo lo que te llega, este mes te faltarían <b>${fmt(-rt.libre)}</b>.`;
+  } else { lbl = `Libre en ${mesNombre(ui.mes).split(" ")[0]}`; big = r.libre; sub = `Entraron ${fmt(r.ingresos)} ese mes.`; }
   return `
   ${!p ? `<div class="banner"><b>Cuéntale a la app cómo te pagan</b>
     <p>Con tu salario calculo cuánto te llega, armo tu plan por quincena y te doy consejos.</p>
     <button class="btn sm" data-accion="perfil">Configurar mi ingreso</button></div>` : ""}
   <section class="billete">
-    <p class="lbl">${falta ? "Te quedará libre en" : "Libre en"} ${mesNombre(ui.mes).split(" ")[0]}</p>
-    <div class="big ${libre < 0 ? "neg" : ""}">${fmt(libre)}</div>
-    <p class="sub">${subTxt}${falta ? ` · incluye ${fmt(falta)} por llegar` : ""}</p>
+    <p class="lbl">${lbl}</p>
+    <div class="big ${big < 0 ? "neg" : ""}">${fmt(big)}</div>
+    <p class="sub">${sub}</p>
+    ${proy ? `<p class="proy">${proy}</p>` : ""}
     <button class="barbtn" data-accion="desglose"><span class="bar">${barHtml(segmentos(r, libre))}</span><span class="more">Ver en qué se va ›</span></button>
   </section>
 
@@ -887,11 +959,21 @@ function vMovs() {
   let movs = movsMes(ui.mes).filter(m => f === "todos" || m.tipo === f);
   movs.sort((a, b) => (b.fecha + b.creado).localeCompare(a.fecha + a.creado));
   const grupos = {}; movs.forEach(m => (grupos[m.fecha] ||= []).push(m));
-  const r = resumen(ui.mes);
+  const r = resumen(ui.mes), salio = r.variables + r.fijos + r.deudas, bal = r.ingresos - salio;
+  const actual = ymOf(hoy()), enCurso = ui.mes === actual, futuro = ui.mes > actual;
+  const nota = !r.ingresos && !salio ? "Aún no hay movimientos este mes."
+    : bal < 0 ? `Saliste ${fmt(-bal)} más de lo que entró${enCurso ? " en lo que va del mes" : ""}.`
+    : r.ahorro ? `De esto apartaste ${fmt(r.ahorro)} al ahorro${bal - r.ahorro > 0 ? ` y quedan ${fmt(bal - r.ahorro)} sin destino` : ""}.`
+    : bal > 0 ? `Te ${enCurso || futuro ? "va quedando" : "quedó"} ${fmt(bal)} a favor. Si te sobra a fin de mes, pásalo a una meta de ahorro.` : "Entró lo mismo que salió.";
   return `
-  <div class="stat3"><div><small>Entró</small><b class="amt in">${fmt(r.ingresos)}</b></div>
-    <div><small>Salió</small><b class="amt out">${fmt(r.variables + r.fijos + r.deudas)}</b></div>
-    <div><small>Ahorrado</small><b class="amt save">${fmt(r.ahorro)}</b></div></div>
+  <div class="card balance">
+    <div class="bal-top"><small>Balance ${enCurso ? "del mes, hasta hoy" : "del mes"}</small>
+      <b class="${bal > 0 ? "pos" : bal < 0 ? "neg" : ""}">${bal > 0 ? "+" : bal < 0 ? "−" : ""}${fmt(Math.abs(bal)).replace("−", "")}</b>
+      <span>${nota}</span></div>
+    <div class="bal-grid"><div><small>Entró</small><b class="amt in">${fmt(r.ingresos)}</b></div>
+      <div><small>Salió</small><b class="amt out">${fmt(salio)}</b></div>
+      <div><small>Ahorrado</small><b class="amt save">${fmt(r.ahorro)}</b></div></div>
+  </div>
   ${r.credito ? `<p class="sub2" style="margin:10px 2px 0">+ ${fmt(r.credito)} en compras con tarjeta, que se pagan en cuotas.</p>` : ""}
   <div class="chips" style="margin-top:14px">
     ${[["todos","Todos"],["gasto","Gastos"],["credito","Con tarjeta"],["ingreso","Ingresos"],["transferencia","Transferencias"],["prestamo","Personas"],["ahorro","Ahorro"]].map(([k, n]) => `<button class="pill ${f===k?"on":""}" data-filtro="${k}">${n}</button>`).join("")}
@@ -961,12 +1043,13 @@ function vDeudas() {
       ${t.cupo ? miniBar(saldo / t.cupo * 100, saldo / t.cupo > .7 ? "var(--out)" : "var(--debt)") : ""}</span>
       <span class="amt debt">${fmt(saldo)}</span>${chev}</button>`; }).join("")}</div>`
     : `<div class="list"><div class="empty sm">Agrega tus tarjetas para controlar las compras a cuotas.</div></div>`}
-  ${secc("Con personas", lnk("+ Agregar", 'data-accion="nuevaPersona"'))}
-  ${data.config.personas.length ? `<div class="list">${data.config.personas.map(pe => { const sp = saldoPersona(pe.id);
+  ${secc("Me deben y debo", lnk("+ Agregar", 'data-accion="nuevaPersona"'))}
+  ${data.config.personas.length ? `<div class="list">${data.config.personas.map(pe => { const sp = saldoPersona(pe.id), pp = pendientesPersona(pe.id);
+    const lado = sp > 0 ? pp.meDeben : pp.debo, f = lado.map(x => x.m.vence).filter(Boolean).sort()[0], vencido = f && f < hoy();
     return `<button class="item" data-verpersona="${pe.id}"><span class="ico">🤝</span>
-      <span class="grow"><span class="t">${esc(pe.nombre)}</span><span class="s">${sp > 0 ? "Te debe" : sp < 0 ? "Le debes" : "A paz y salvo"}</span></span>
+      <span class="grow"><span class="t">${esc(pe.nombre)}</span><span class="s">${sp > 0 ? "Te debe" : sp < 0 ? "Le debes" : "A paz y salvo"}${sp && f ? ` · <span style="${vencido ? "color:var(--out)" : ""}">${vencido ? "venció" : "para"} el ${fechaCorta(f)}</span>` : ""}</span></span>
       <span class="amt ${sp > 0 ? "in" : sp < 0 ? "out" : ""}">${fmt(Math.abs(sp))}</span>${chev}</button>`; }).join("")}</div>`
-    : `<div class="list"><div class="empty sm">Plata que prestaste o que te prestaron familiares y amigos.</div></div>`}
+    : `<div class="list"><div class="empty sm">Plata que prestaste o te prestaron, y cosas que quedaste debiendo: los zapatos, el mercado de la tienda…</div></div>`}
   ${secc("Créditos", lnk("+ Agregar", 'data-accion="nuevaDeuda"'))}
   ${ds.length ? `<div class="list">${ds.map(d => { const saldo = saldoDeuda(d), pct = d.saldoInicial ? pagadoDeuda(d) / d.saldoInicial * 100 : 0;
     return `<button class="item" data-vercredito="${d.id}"><span class="ico">🏦</span>
@@ -1046,9 +1129,8 @@ function vMas() {
   <h2>Respaldo</h2>
   <p class="hint">${col ? "Tus datos se guardan en tu cuenta de Claude y se sincronizan entre dispositivos." : "Tus datos viven solo en este celular y funcionan sin internet. Descarga un respaldo de vez en cuando y guárdalo en Drive o WhatsApp."}</p>
   <div class="actions">
-    <button class="btn ghost" data-accion="exportar">Descargar respaldo (JSON)</button>
-    <button class="btn ghost" data-accion="importar">Restaurar respaldo</button>
-    <input type="file" id="archivo" accept=".json,application/json" hidden>
+    <button class="btn" data-accion="respaldo">Hacer o recuperar un respaldo</button>
+    <input type="file" id="archivo" hidden>
   </div>
   <h2>Zona de cuidado</h2>
   <div class="actions"><button class="btn danger" data-accion="borrarTodo">Borrar todos los datos</button></div>`;
@@ -1252,11 +1334,16 @@ function hojaMovimiento(mov, preset = {}) {
 }
 
 function hojaMovSimple(m) {
-  abrir(`<h3>${m.tipo === "ajuste" ? "Ajuste de saldo" : "Movimiento con persona"}</h3>
+  const conFecha = m.tipo === "prestamo" && ["di", "recibi", "fiado"].includes(m.dir);
+  abrir(`<h3>${m.tipo === "ajuste" ? "Ajuste de saldo" : "Movimiento con " + esc(persona(m.personaId)?.nombre || "persona")}</h3>
     <div class="list">${filaMov(m)}</div>
     <div class="calc" style="margin-top:12px"><div class="kv"><span>Fecha</span><b>${diaNombre(m.fecha)}</b></div>
-      <div class="kv"><span>Cuenta</span><b>${esc(cuenta(m.cuentaId)?.nombre || "")}</b></div>${m.nota ? `<div class="kv"><span>Nota</span><b>${esc(m.nota)}</b></div>` : ""}</div>
+      ${m.cuentaId ? `<div class="kv"><span>Cuenta</span><b>${esc(cuenta(m.cuentaId)?.nombre || "")}</b></div>` : ""}${m.nota ? `<div class="kv"><span>Concepto</span><b>${esc(m.nota)}</b></div>` : ""}</div>
+    ${conFecha ? `<div class="field"><label for="msVence">¿Para cuándo?</label><input id="msVence" type="date" value="${m.vence || ""}"></div>
+      <button class="btn full" id="guardarF">Guardar fecha</button>` : ""}
     <div class="actions"><button class="btn danger full" id="del">Eliminar</button></div>`, s => {
+    const gf = s.querySelector("#guardarF");
+    if (gf) gf.onclick = () => { const v = s.querySelector("#msVence").value; if (v) m.vence = v; else delete m.vence; guardarMes(ymOf(m.fecha)); cerrar(); render(); toast(v ? `Te aviso el ${fechaCorta(v)}` : "Sin fecha"); };
     s.querySelector("#del").onclick = () => { if (!confirm("¿Eliminar este movimiento?")) return;
       const y = ymOf(m.fecha); data.meses[y].movs = data.meses[y].movs.filter(x => x.id !== m.id); guardarMes(y); cerrar(); toast("Eliminado"); render(); };
   });
@@ -1684,7 +1771,7 @@ function cuotasDelMes(ym) {
 }
 function gastoPorCat(ym) {
   const o = {};
-  movsMes(ym).filter(m => (m.tipo === "gasto" && !m.recurrenteId && !m.deudaId && !m.tarjetaId) || m.tipo === "credito")
+  movsMes(ym).filter(m => (m.tipo === "gasto" && !m.recurrenteId && !m.deudaId && !m.tarjetaId) || m.tipo === "credito" || (m.tipo === "prestamo" && m.dir === "fiado"))
     .forEach(m => o[m.categoriaId] = (o[m.categoriaId] || 0) + m.monto);
   return o;
 }
@@ -1704,9 +1791,16 @@ function buscarDeuda(t) {
 function analisisLocal() {
   const ym = ui.mes, r = resumen(ym), rt = ritmo(ym), n = nomina(), ing = n?.llega || 0, out = [];
   const libre = rt ? rt.libre : r.libre;
-  out.push(libre >= 0
-    ? `• Vas con ${fmt(libre)} libres este mes${rt && libre > 0 && rt.rest > 1 ? `: unos ${fmt(rt.porDia)} por día hasta fin de mes` : ""}.`
-    : `• Este mes tus compromisos superan lo que entra por ${fmt(-libre)}. Prioriza fijos y cuotas, y frena lo que pueda esperar.`);
+  if (rt) {
+    out.push(`• Hoy tienes ${fmt(rt.disponible)} en tus cuentas.` + (rt.prox ? ` Tu ${rt.prox.nombre.toLowerCase()} de ${fmt(rt.prox.monto)} todavía no ha llegado: llega ${cuandoLlega(rt.prox)}.` : ""));
+    if (rt.prox) out.push(rt.usable > 0
+      ? `• Hasta que te paguen puedes gastar unos ${fmt(rt.porDia)} por día${rt.pagosAntes ? `, ya separando ${fmt(rt.pagosAntes)} de pagos que vencen antes` : ""}.`
+      : rt.pagosAntes > 0 ? `• Antes de que te paguen vencen ${fmt(rt.pagosAntes)} en pagos y con lo que tienes no alcanza: prioriza los fijos y evita otros gastos hasta el día ${rt.prox.dia}.`
+      : `• Hasta que te paguen no tienes plata disponible: evita gastos hasta el día ${rt.prox.dia}.`);
+    else if (rt.porDia > 0 && rt.rest > 1) out.push(`• Te alcanza para unos ${fmt(rt.porDia)} por día hasta fin de mes.`);
+    out.push(libre >= 0 ? `• Si todo llega como está previsto, terminarías el mes con ${fmt(libre)} libres.`
+      : `• Aun con todo lo que te llega este mes, tus compromisos lo superan por ${fmt(-libre)}. Prioriza fijos y cuotas.`);
+  } else out.push(libre >= 0 ? `• Ese mes terminó con ${fmt(libre)} libres.` : `• Ese mes los gastos superaron lo que entró por ${fmt(-libre)}.`);
   const a = gastoPorCat(ym), b = gastoPorCat(ymShift(ym, -1));
   const top = Object.entries(a).sort((x, y) => y[1] - x[1]).slice(0, 3);
   if (top.length) out.push(`• Donde más se te va: ${top.map(([id, v]) => `${cat(id)?.nombre || "Otros"} (${fmt(v)})`).join(", ")}.`);
@@ -1776,10 +1870,14 @@ function responder(txt) {
   }
   if (has(/cuanto (puedo )?gastar|me queda (libre|para)|cuanto me queda|por dia|al dia|esta semana/)) {
     const rt = ritmo(actual); if (!rt) return "No pude calcularlo.";
+    if (rt.prox) {
+      if (rt.usable <= 0) return `Hoy tienes ${fmt(rt.disponible)} en tus cuentas${rt.pagosAntes ? ` y antes de tu ${rt.prox.nombre.toLowerCase()} vencen ${fmt(rt.pagosAntes)} en pagos` : ""}. No te alcanza para gastos extra: espera a que te paguen (llega ${cuandoLlega(rt.prox)}).`;
+      return `Hoy tienes ${fmt(rt.disponible)} en tus cuentas${rt.pagosAntes ? `, y antes de tu ${rt.prox.nombre.toLowerCase()} debes pagar ${fmt(rt.pagosAntes)}` : ""}. Hasta que te paguen (${cuandoLlega(rt.prox)}) puedes gastar unos ${fmt(rt.porDia)} por día.\n\nCuando llegue tu pago, vuelve a preguntarme y te recalculo el resto del mes.`;
+    }
     const semana = Math.min(7, rt.rest);
-    return rt.libre <= 0 ? `Este mes ya no te queda libre (${fmt(rt.libre)}). Lo sano es no gastar en nada que no sea esencial hasta tu próximo pago.`
-      : rt.rest === 1 ? `Hoy es el último día del mes y te quedan ${fmt(rt.libre)} libres, ya descontando lo que tienes por pagar y lo reservado en bolsillos. Lo que no gastes, pásalo a tu ahorro.`
-      : `Te quedan ${fmt(rt.libre)} libres para ${rt.rest} días: unos ${fmt(rt.porDia)} por día, o ${fmt(rt.porDia * semana)} para los próximos ${semana} días. Ya está descontado lo que tienes por pagar y lo reservado en bolsillos.`;
+    if (rt.porDia <= 0) return `Con lo que tienes (${fmt(rt.disponible)}) y lo que falta por pagar este mes, no te queda para gastos extra. Lo sano es no gastar en nada que no sea esencial hasta tu próximo pago.`;
+    return rt.rest === 1 ? `Hoy es el último día del mes y puedes gastar hasta ${fmt(rt.porDia)}. Lo que no gastes, pásalo a tu ahorro.`
+      : `Puedes gastar unos ${fmt(rt.porDia)} por día los ${rt.rest} días que quedan, o ${fmt(rt.porDia * semana)} para los próximos ${semana} días. Ya está descontado lo que tienes por pagar y lo reservado en bolsillos.`;
   }
   if (has(/termino de pagar|cuando termino|cuando acabo|cuando salgo/)) {
     const { tj, d } = buscarDeuda(t);
@@ -1802,8 +1900,10 @@ function responder(txt) {
     return p.map(e => `${e.nombre}: unos ${fmt(e.monto)}, a más tardar en ${e.dias} días${e.liquido ? "" : " (va a tu fondo, no a tu cuenta)"}.`).join("\n");
   }
   if (has(/me debe|me deben|le debo|quien/)) {
-    const ps = data.config.personas.map(pe => ({ pe, s: saldoPersona(pe.id) })).filter(x => x.s);
-    return ps.length ? ps.map(x => x.s > 0 ? `${x.pe.nombre} te debe ${fmt(x.s)}.` : `Le debes a ${x.pe.nombre} ${fmt(-x.s)}.`).join("\n") : "Nadie te debe y no le debes a nadie. 🙌";
+    const cs = compromisosPersonas().sort((a, b) => (a.m.vence || "9999").localeCompare(b.m.vence || "9999"));
+    if (!cs.length) return "Nadie te debe y no le debes a nadie. 🙌";
+    const linea = x => `• ${x.lado === "debo" ? `Le debes a ${x.pe.nombre}` : `${x.pe.nombre} te debe`} ${fmt(x.pend)}${x.m.nota ? ` (${x.m.nota})` : ""}${x.m.vence ? `${x.m.vence < hoy() ? " · venció el " : " · para el "}${fechaCorta(x.m.vence)}` : " · sin fecha"}`;
+    return cs.map(linea).join("\n");
   }
   if (has(/quincena/)) {
     const q = planQuincenas(actual); if (!q) return "Configura tu pago como quincenal en ⚙️ para ver el plan por quincena.";
@@ -1834,7 +1934,9 @@ function datosGemini() {
   const porCat = {}; Object.entries(gastoPorCat(ui.mes)).forEach(([id, v]) => porCat[cat(id)?.nombre || "Otros"] = v);
   return {
     hoy: hoy(), mes: ui.mes, ingresoMensual: n?.llega || null, frecuenciaPago: p?.frecuencia || null, tipoIngreso: p?.tipo || null,
-    libreProyectadoDelMes: rt ? rt.libre : r.libre, diasRestantes: rt ? rt.rest : null,
+    disponibleHoyEnCuentas: rt ? rt.disponible : null, proximoPago: rt?.prox ? { monto: rt.prox.monto, dia: rt.prox.dia } : null,
+    pagosAntesDelProximoPago: rt ? rt.pagosAntes : null, puedeGastarPorDia: rt ? rt.porDia : null,
+    libreProyectadoAlFinalDelMes: rt ? rt.libre : r.libre, diasRestantes: rt ? rt.rest : null,
     resumenMes: { ingresos: r.ingresos, gastosDelDiaADia: r.variables, fijosPagados: r.fijos, cuotasPagadas: r.deudas, ahorro: r.ahorro, porPagar: r.pendiente, reservadoEnBolsillos: r.reservado },
     gastosPorCategoria: porCat,
     gastosFijos: data.config.recurrentes.filter(x => x.activo !== false).map(x => ({ nombre: x.nombre, monto: x.monto, dia: x.dia })),
@@ -1847,33 +1949,71 @@ function datosGemini() {
 const SYS_GEM = `Eres el asesor de la app Libreta, de finanzas personales para personas en Colombia. Montos en pesos colombianos (COP).
 Ten en cuenta quincenas, prima, cesantías, tarjetas con tasa E.A., compras diferidas a cuotas, bolsillos de Nequi o Daviplata y el 4x1000.
 Te doy el cálculo que ya hizo la app: úsalo como base y nunca contradigas sus cifras ni inventes números nuevos.
+Distingue siempre la plata que la persona ya tiene hoy de la que todavía no le ha llegado: nunca trates un pago pendiente como dinero disponible.
 Escribe en español de Colombia, cálido y directo, sin tecnicismos, en texto plano sin markdown, máximo 130 palabras.
 Solo hablas de finanzas personales. Cierra con una línea corta recordando que es orientación general, no asesoría financiera profesional.`;
+const API_GEM = "https://generativelanguage.googleapis.com/v1beta";
+let gemDetalle = "";   // último error de Google, para mostrarlo en "Probar conexión"
+async function fetchGem(url, opciones, ms = 20000) {
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms);
+  try { return await fetch(url, { ...opciones, signal: ctl.signal }); }
+  catch (e) { throw new Error(e.name === "AbortError" ? "tiempo" : "sin_internet"); }
+  finally { clearTimeout(to); }
+}
+function errorGem(status, j) {
+  const msg = j?.error?.message || "";
+  gemDetalle = `Error ${status}${msg ? ": " + msg : ""}`;
+  if (status === 429) return new Error("limite");
+  if (status === 401 || status === 403 || /api key|api_key|credential|unauthenticated|permission/i.test(msg)) return new Error("llave");
+  if (status === 404 || /not found|is not supported/i.test(msg)) return new Error("modelo");
+  return new Error("servidor");
+}
+// Busca qué modelos Flash tiene disponibles la llave (Google cambia los nombres con frecuencia)
+async function elegirModeloGem(key, preferencia) {
+  const r = await fetchGem(`${API_GEM}/models?pageSize=200`, { headers: { "x-goog-api-key": key } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw errorGem(r.status, j);
+  const lite = /lite/.test(preferencia || "");
+  const ver = n => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
+  const lista = (j.models || [])
+    .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+    .map(m => m.name.replace(/^models\//, ""))
+    .filter(n => /^gemini-.*flash/.test(n) && !/image|tts|audio|live|embedding|thinking|computer|robotics/.test(n))
+    .filter(n => lite ? /lite/.test(n) : !/lite/.test(n));
+  if (!lista.length) throw new Error("modelo");
+  const estable = n => !/preview|exp/.test(n) ? 1 : 0, alias = n => /latest/.test(n) ? 1 : 0;
+  lista.sort((a, b) => alias(b) - alias(a) || estable(b) - estable(a) || ver(b) - ver(a));
+  return lista[0];
+}
 async function llamarGemini(tarea) {
   const g = gem();
   if (!g.key) throw new Error("sin_llave");
   if (!enLinea()) throw new Error("sin_internet");
-  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 20000);
   const cuerpo = { systemInstruction: { parts: [{ text: SYS_GEM }] }, contents: [{ role: "user", parts: [{ text: tarea }] }],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 1500 } };
-  const pedir = modelo => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-    method: "POST", signal: ctl.signal, headers: { "content-type": "application/json", "x-goog-api-key": g.key }, body: JSON.stringify(cuerpo) });
-  try {
-    let r = await pedir(g.modelo);
-    if (r.status === 404 && g.modelo !== "gemini-2.5-flash") r = await pedir("gemini-2.5-flash");
+    generationConfig: { temperature: 0.4, maxOutputTokens: 4096 } };
+  const pedir = async modelo => {
+    const r = await fetchGem(`${API_GEM}/models/${modelo}:generateContent`, {
+      method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": g.key }, body: JSON.stringify(cuerpo) }, 30000);
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(r.status === 429 ? "limite" : (r.status === 400 || r.status === 401 || r.status === 403) ? "llave" : "servidor");
-    const txt = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-    if (!txt) throw new Error("vacio");
+    if (!r.ok) throw errorGem(r.status, j);
+    const c = j.candidates?.[0];
+    const txt = (c?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("").trim();
+    if (!txt) { gemDetalle = `Respuesta vacía${c?.finishReason ? " (" + c.finishReason + ")" : ""}${j.promptFeedback?.blockReason ? " · bloqueo: " + j.promptFeedback.blockReason : ""}`; throw new Error("vacio"); }
     return txt.replace(/\*\*/g, "").replace(/^#+\s*/gm, "");
-  } catch (e) {
-    if (e.name === "AbortError") throw new Error("tiempo");
-    if (e instanceof TypeError) throw new Error("sin_internet");
-    throw e;
-  } finally { clearTimeout(to); }
+  };
+  let modelo = g.resuelto || g.modelo;
+  try { return await pedir(modelo); }
+  catch (e) {
+    if (e.message !== "modelo" && e.message !== "vacio") throw e;
+    // el modelo ya no existe o no respondió: buscar uno disponible y reintentar una vez
+    const nuevo = await elegirModeloGem(g.key, g.modelo);
+    try { localStorage.setItem(LS_GEM, JSON.stringify({ ...g, resuelto: nuevo })); } catch (x) {}
+    return await pedir(nuevo);
+  }
 }
 function motivoGemini(e) {
-  return { sin_internet: "Sin conexión con Gemini", limite: "Gemini llegó a su límite gratuito por ahora", llave: "La llave de Gemini no es válida (revísala en ajustes)", tiempo: "Gemini tardó demasiado" }[e?.message] || "Gemini no respondió";
+  return { sin_internet: "Sin conexión con Gemini", limite: "Gemini llegó a su límite gratuito por ahora", llave: "Google no aceptó la llave",
+    tiempo: "Gemini tardó demasiado", modelo: "No encontré un modelo de Gemini disponible para tu llave", vacio: "Gemini respondió vacío" }[e?.message] || "Gemini no respondió";
 }
 async function responderConGemini(titulo, local, tarea) {
   const cab = titulo ? `🙋 ${titulo}\n\n` : "";
@@ -1882,7 +2022,7 @@ async function responderConGemini(titulo, local, tarea) {
   try {
     const g = await llamarGemini(`${tarea}\n\nCálculo de la app:\n${local}\n\nDatos (JSON):\n${JSON.stringify(datosGemini())}`);
     setIA(`${cab}${g}\n\n✨ Gemini, con los cálculos de tu Libreta`);
-  } catch (e) { setIA(`${cab}${local}\n\n📱 ${motivoGemini(e)}: esta respuesta la calculó tu celular.`); }
+  } catch (e) { setIA(`${cab}${local}\n\n📱 ${motivoGemini(e)}: esta respuesta la calculó tu celular.${e?.message === "sin_internet" ? "" : " Revisa en ⚙️ → Asistente → Probar conexión."}`); }
 }
 function hojaGemini() {
   const g = gem();
@@ -1890,18 +2030,19 @@ function hojaGemini() {
     ${HAY_CLAUDE ? `<div class="banner" style="margin:0 0 14px"><b>Vista previa</b><p style="margin:4px 0 0">Aquí dentro de Claude no se permite conectar con Google. Gemini funciona en la app instalada desde tu enlace.</p></div>` : ""}
     <p class="sub2" style="margin:-8px 0 14px">Opcional y gratis. Con internet, Gemini amplía las respuestas del asesor. Sin internet, Libreta sigue respondiendo con sus propios cálculos.</p>
     <div class="calc"><b style="color:var(--ink)">Cómo conseguir tu llave</b><br>1. Entra a aistudio.google.com con tu cuenta de Google.<br>2. Toca <b>Get API key</b> y luego <b>Create API key</b>.<br>3. Cópiala y pégala aquí. No pide tarjeta de crédito.</div>
-    <div class="field"><label for="gKey">Tu llave de Gemini</label><input id="gKey" type="password" autocomplete="off" placeholder="AIza…" value="${esc(g.key)}"></div>
+    <div class="field"><label for="gKey">Tu llave de Gemini</label><input id="gKey" type="password" autocomplete="off" placeholder="AQ.… o AIza…" value="${esc(g.key)}"></div>
     <div class="field"><label for="gMod">Modelo</label><select id="gMod">${[["gemini-flash-latest", "Flash (recomendado)"], ["gemini-flash-lite-latest", "Flash-Lite (más consultas al día)"]]
       .map(([v, n]) => `<option value="${v}" ${g.modelo === v ? "selected" : ""}>${n}</option>`).join("")}</select></div>
     <p class="hint">Privacidad: en la versión gratuita, Google puede usar lo que se le envía para mejorar sus productos. Libreta solo envía totales, categorías y los nombres de tus tarjetas, créditos o metas; nunca nombres de personas ni tus notas. La llave queda guardada solo en este celular.</p>
     <button class="btn full" id="ok">Guardar</button>
     <div class="actions"><button class="btn ghost full" id="probar">Probar conexión</button>${g.key ? `<button class="btn danger full" id="quitar">Quitar llave</button>` : ""}</div>
     <p class="hint" id="res" style="margin-top:10px"></p>`, s => {
-    const guardar = () => { try { localStorage.setItem(LS_GEM, JSON.stringify({ key: s.querySelector("#gKey").value.trim(), modelo: s.querySelector("#gMod").value })); } catch (e) {} };
+    const guardar = () => { try { localStorage.setItem(LS_GEM, JSON.stringify({ key: s.querySelector("#gKey").value.replace(/\s+/g, ""), modelo: s.querySelector("#gMod").value })); } catch (e) {} };
     s.querySelector("#ok").onclick = () => { guardar(); cerrar(); toast(gem().key ? "Gemini activado" : "Gemini desactivado"); render(); };
     s.querySelector("#probar").onclick = async () => { guardar(); const el = s.querySelector("#res"); el.textContent = "Probando…";
-      try { await llamarGemini("Responde solo con la palabra: listo"); el.textContent = "✓ Conectado. Ya puedes preguntar con Gemini."; }
-      catch (e) { el.textContent = motivoGemini(e) + "."; } };
+      gemDetalle = "";
+      try { await llamarGemini("Responde solo con la palabra: listo"); const g2 = gem(); el.textContent = `✓ Conectado (${g2.resuelto || g2.modelo}). Ya puedes preguntar con Gemini.`; }
+      catch (e) { el.textContent = motivoGemini(e) + "." + (gemDetalle ? "\n\nDetalle de Google: " + gemDetalle : ""); el.style.whiteSpace = "pre-wrap"; } };
     const q = s.querySelector("#quitar"); if (q) q.onclick = () => { try { localStorage.removeItem(LS_GEM); } catch (e) {} cerrar(); toast("Llave quitada"); render(); };
   });
 }
@@ -1926,10 +2067,10 @@ function hojaDesglose() {
   abrir(`<h3>En qué se va tu plata</h3><p class="sub2" style="margin:-8px 0 14px;text-transform:capitalize">${mesNombre(ui.mes)}</p>
     <div class="bar">${barHtml(seg)}</div>
     <div class="legend">${seg.map(([n, v, c]) => `<div class="row"><span class="sw" style="background:${c}"></span><span class="n">${n}</span><span class="v">${fmt(v)}</span></div>`).join("")}</div>
-    <div class="calc" style="margin-top:12px"><div class="kv"><span>Entró</span><b>${fmt(r.ingresos)}</b></div>
+    <div class="calc" style="margin-top:12px">${rt ? `<div class="kv"><span>Disponible hoy en tus cuentas</span><b>${fmt(rt.disponible)}</b></div>` : ""}<div class="kv"><span>Entró este mes</span><b>${fmt(r.ingresos)}</b></div>
       ${rt?.falta ? `<div class="kv"><span>Por llegar</span><b>${fmt(rt.falta)}</b></div>` : ""}
       ${r.credito ? `<div class="kv"><span>Compras con tarjeta (en cuotas)</span><b>${fmt(r.credito)}</b></div>` : ""}
-      <div class="tot"><span>Libre</span><span>${fmt(libre)}</span></div></div>`);
+      <div class="tot"><span>${rt?.falta ? "Libre al final del mes (si todo llega)" : "Libre"}</span><span>${fmt(libre)}</span></div></div>`);
 }
 function hojaProximos() {
   const prox = proximos(ui.mes);
@@ -2039,13 +2180,25 @@ function hojaVerMeta(id) {
 
 function hojaVerPersona(id) {
   const pe = persona(id); if (!pe) return;
-  const sp = saldoPersona(id), movs = movsPersona(id).sort((a, b) => (b.fecha + b.creado).localeCompare(a.fecha + a.creado));
+  const sp = saldoPersona(id), pp = pendientesPersona(id), h = hoy();
+  const movs = movsPersona(id).sort((a, b) => (b.fecha + b.creado).localeCompare(a.fecha + a.creado));
+  const filaPend = (x, lado) => { const venc = x.m.vence && x.m.vence < h;
+    return `<button class="item" data-prestamo="${id}|${lado === "debo" ? "abono" : "cobro"}|${x.m.id}">
+      <span class="ico">${x.m.dir === "fiado" ? (cat(x.m.categoriaId)?.icono || "🧾") : "💵"}</span>
+      <span class="grow"><span class="t">${esc(x.m.nota || (x.m.dir === "fiado" ? "Fiado" : "Préstamo"))}</span>
+        <span class="s">${x.m.vence ? `<span style="${venc ? "color:var(--out)" : ""}">${venc ? "Venció" : "Para"} el ${fechaCorta(x.m.vence)}</span>` : "Sin fecha"}${x.pend < x.m.monto ? ` · abonado ${fmt(x.m.monto - x.pend)}` : ""}</span></span>
+      <span class="amt ${lado === "debo" ? "out" : "in"}">${fmt(x.pend)}</span>${chev}</button>`; };
   abrir(`<h3>🤝 ${esc(pe.nombre)}</h3>
     <section class="hero sm" style="padding:0"><p class="lbl">${sp > 0 ? "Te debe" : sp < 0 ? "Le debes" : "Están a paz y salvo"}</p>
       <div class="big" style="color:${sp > 0 ? "var(--in)" : sp < 0 ? "var(--out)" : "var(--ink)"}">${fmt(Math.abs(sp))}</div></section>
+    ${pp.debo.length ? `<div class="h4">Lo que le debes</div><div class="list">${pp.debo.map(x => filaPend(x, "debo")).join("")}</div>
+      <p class="sub2" style="margin:8px 2px 0">Toca una deuda para pagarla.</p>` : ""}
+    ${pp.meDeben.length ? `<div class="h4">Lo que te debe</div><div class="list">${pp.meDeben.map(x => filaPend(x, "meDeben")).join("")}</div>
+      <p class="sub2" style="margin:8px 2px 0">Toca una para registrar que te pagó.</p>` : ""}
     <div class="actions">
-      ${sp > 0 ? `<button class="btn sm" data-prestamo="${id}|cobro">Me pagó</button>` : ""}
-      ${sp < 0 ? `<button class="btn sm" data-prestamo="${id}|abono">Le pagué</button>` : ""}
+      ${pp.meDeben.length ? `<button class="btn sm" data-prestamo="${id}|cobro">Me pagó</button>` : ""}
+      ${pp.debo.length ? `<button class="btn sm" data-prestamo="${id}|abono">Le pagué</button>` : ""}
+      <button class="btn sm ghost" data-prestamo="${id}|fiado">Quedé debiendo</button>
       <button class="btn sm ghost" data-prestamo="${id}|di">Le presté</button>
       <button class="btn sm ghost" data-prestamo="${id}|recibi">Me prestó</button>
     </div>
@@ -2055,30 +2208,71 @@ function hojaVerPersona(id) {
     const d = s.querySelector("#del"); if (d) d.onclick = () => { data.config.personas = data.config.personas.filter(x => x.id !== id); guardarConfig(); cerrar(); render(); };
   });
 }
-function hojaPrestamo(personaId, dir) {
-  const pe = persona(personaId), sp = pe ? saldoPersona(pe.id) : 0;
-  const titulos = { di: "Le presté", recibi: "Me prestó", cobro: "Me pagó", abono: "Le pagué" };
-  const sug = (dir === "cobro" && sp > 0) || (dir === "abono" && sp < 0) ? Math.abs(sp) : 0;
-  const sale = dir === "di" || dir === "abono";
-  abrir(`<h3>${titulos[dir]}${pe ? " · " + esc(pe.nombre) : ""}</h3>
-    ${pe ? "" : `<div class="seg">${Object.entries(titulos).slice(0, 2).map(([k, n]) => `<button data-dir="${k}" class="${dir===k?"on":""}">${n}</button>`).join("")}</div>
-      <div class="field"><label for="prNom">¿Quién?</label><input id="prNom" list="dlPer2" maxlength="30" placeholder="Nombre"><datalist id="dlPer2">${data.config.personas.map(p => `<option value="${esc(p.nombre)}">`).join("")}</datalist></div>`}
+
+const TIT_PREST = { fiado: "Quedé debiendo", di: "Le presté plata", recibi: "Me prestó plata", cobro: "Me pagó", abono: "Le pagué" };
+function opcionesVence() {
+  const h = hoy(), [y, m] = h.split("-").map(Number), sumar = n => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const op = [["", "Sin fecha"], [sumar(8), "En 8 días"]];
+  const q = proximoPagoFecha(); if (q) op.push([q, `Próximo pago (${fechaCorta(q)})`]);
+  op.push([`${y}-${pad(m)}-${pad(ultimoDia(ymOf(h)))}`, "Fin de mes"]);
+  return op;
+}
+function hojaPrestamo(personaId, dir, movId) {
+  const pe = persona(personaId);
+  const crea = d => ["fiado", "di", "recibi"].includes(d);
+  let pendItem = null, sug = 0;
+  if (pe && (dir === "cobro" || dir === "abono")) {
+    const pp = pendientesPersona(pe.id), lado = dir === "cobro" ? pp.meDeben : pp.debo;
+    pendItem = lado.find(x => x.m.id === movId) || null;
+    sug = pendItem ? pendItem.pend : lado.reduce((s, x) => s + x.pend, 0);
+  }
+  let vence = "";
+  abrir(`<h3>${TIT_PREST[dir]}${pe ? " · " + esc(pe.nombre) : ""}</h3>
+    ${pendItem ? `<p class="sub2" style="margin:-8px 0 14px">${esc(pendItem.m.nota || "Pendiente")} · quedan ${fmt(pendItem.pend)}</p>` : ""}
+    ${pe || !crea(dir) ? "" : `<div class="seg">${["fiado", "di", "recibi"].map(k => `<button data-dir="${k}" class="${dir === k ? "on" : ""}">${{ fiado: "Debo algo", di: "Le presté", recibi: "Me prestó" }[k]}</button>`).join("")}</div>`}
+    <p class="hint" id="prAyuda"></p>
+    ${pe ? "" : `<div class="field"><label for="prNom">¿Quién? (persona o negocio)</label><input id="prNom" list="dlPer2" maxlength="30" placeholder="Ej: Juan, la tienda de doña Rosa"><datalist id="dlPer2">${data.config.personas.map(p => `<option value="${esc(p.nombre)}">`).join("")}</datalist></div>`}
+    <div class="field" id="wQue"><label for="prQue" id="lQue">¿Qué?</label><input id="prQue" maxlength="60"></div>
     <div class="field"><label for="prMonto">Monto</label><input id="prMonto" class="money" inputmode="numeric" placeholder="$0" value="${sug ? sug.toLocaleString("es-CO") : ""}"></div>
+    <div class="field" id="wCat"><label for="prCat">Categoría</label><select id="prCat">${opcCats("gasto", data.config.categorias.find(c => c.tipo === "gasto" && /^otros/i.test(c.nombre))?.id)}</select></div>
     <div class="row2">
-      <div class="field"><label for="prCuenta" id="lCta">${sale ? "Salió de" : "Entró a"}</label><select id="prCuenta">${opcCuentas()}</select></div>
+      <div class="field" id="wCta"><label for="prCuenta" id="lCta"></label><select id="prCuenta">${opcCuentas()}</select></div>
       <div class="field"><label for="prFecha">Fecha</label><input id="prFecha" type="date" value="${fechaDefault()}"></div>
     </div>
-    <div class="field"><label for="prNota">Nota (opcional)</label><input id="prNota" maxlength="60" placeholder="Ej: para el arreglo de la moto"></div>
+    <div class="field" id="wVence"><label>¿Para cuándo?</label>
+      <div class="chips" id="chVence"></div>
+      <input id="prVence" type="date" style="margin-top:8px" aria-label="Otra fecha"></div>
     <button class="btn full" id="ok">Guardar</button>`, s => {
-    montoInput(s.querySelector("#prMonto"));
-    s.querySelectorAll("[data-dir]").forEach(b => b.onclick = () => { dir = b.dataset.dir; s.querySelectorAll("[data-dir]").forEach(x => x.classList.toggle("on", x === b));
-      s.querySelector("#lCta").textContent = dir === "di" ? "Salió de" : "Entró a"; });
-    s.querySelector("#ok").onclick = () => {
-      const monto = num(s.querySelector("#prMonto").value); if (!monto) return toast("Escribe un monto");
-      const p = pe || personaPorNombre(s.querySelector("#prNom").value); if (!p) return toast("Escribe el nombre");
-      agregarMov({ id: uid(), creado: new Date().toISOString(), tipo: "prestamo", dir, personaId: p.id, monto,
-        fecha: s.querySelector("#prFecha").value || hoy(), cuentaId: s.querySelector("#prCuenta").value, nota: s.querySelector("#prNota").value.trim() });
-      render(); hojaVerPersona(p.id); toast("Guardado");
+    const $s = q => s.querySelector(q);
+    montoInput($s("#prMonto"));
+    const ops = opcionesVence();
+    const pintarChips = () => { $s("#chVence").innerHTML = ops.map(([v, n]) => `<button type="button" class="pill ${vence === v ? "on" : ""}" data-v="${v}">${n}</button>`).join("");
+      $s("#chVence").querySelectorAll("[data-v]").forEach(b => b.onclick = () => { vence = b.dataset.v; $s("#prVence").value = vence; pintarChips(); }); };
+    $s("#prVence").onchange = e => { vence = e.target.value; pintarChips(); };
+    const ajustar = () => {
+      const es = crea(dir);
+      $s("#wVence").hidden = !es; $s("#wCat").hidden = dir !== "fiado"; $s("#wCta").hidden = dir === "fiado";
+      $s("#lCta").textContent = dir === "di" || dir === "abono" ? "Salió de" : "Entró a";
+      $s("#lQue").textContent = dir === "fiado" ? "¿Qué quedaste debiendo?" : es ? "¿Para qué? (opcional)" : "Nota (opcional)";
+      $s("#prQue").placeholder = dir === "fiado" ? "Ej: unos zapatos, el pollo, el mercado" : dir === "di" ? "Ej: para el arreglo de la moto" : dir === "recibi" ? "Ej: para el arriendo" : "";
+      $s("#prAyuda").textContent = { fiado: "Te llevaste algo sin pagarlo. No sale plata de tu cuenta hoy; queda como deuda hasta que pagues.",
+        di: "Sale plata de tu cuenta y queda como que te deben.", recibi: "Entra plata a tu cuenta y queda como que debes.",
+        cobro: "Entra plata a tu cuenta y se descuenta de lo que te deben.", abono: "Sale plata de tu cuenta y se descuenta de lo que debes." }[dir];
+      pintarChips();
+    };
+    s.querySelectorAll("[data-dir]").forEach(b => b.onclick = () => { dir = b.dataset.dir; s.querySelectorAll("[data-dir]").forEach(x => x.classList.toggle("on", x === b)); ajustar(); });
+    $s("#prQue").addEventListener("input", () => { if (dir !== "fiado") return; const c = buscarCat(" " + norm($s("#prQue").value) + " "); if (c) $s("#prCat").value = c.id; });
+    ajustar();
+    $s("#ok").onclick = () => {
+      const monto = num($s("#prMonto").value); if (!monto) return toast("Escribe un monto");
+      const que = $s("#prQue").value.trim();
+      if (dir === "fiado" && !que) return toast("Escribe qué quedaste debiendo");
+      const p = pe || personaPorNombre($s("#prNom").value); if (!p) return toast("Escribe a quién");
+      const m = { id: uid(), creado: new Date().toISOString(), tipo: "prestamo", dir, personaId: p.id, monto, fecha: $s("#prFecha").value || hoy(), nota: que };
+      if (dir === "fiado") m.categoriaId = $s("#prCat").value; else m.cuentaId = $s("#prCuenta").value;
+      if (crea(dir) && vence) m.vence = vence;
+      agregarMov(m); render(); hojaVerPersona(p.id);
+      toast(crea(dir) ? (vence ? `Guardado · te aviso el ${fechaCorta(vence)}` : "Guardado") : "Pago registrado");
     };
   });
 }
@@ -2167,52 +2361,105 @@ function hojaCategoria(id, tipo, alTerminar) {
 }
 
 /* ============ Respaldo ============ */
-async function exportar() {
-  const txt = JSON.stringify({ app: "libreta", version: 1, exportado: new Date().toISOString(), ...data }, null, 2);
-  const nombre = `libreta-respaldo-${hoy()}.json`;
-  const dl = HAY_CLAUDE ? await window.claude.use("downloads") : null;
-  if (CAP && CAP.Plugins.Filesystem && CAP.Plugins.Share) {
-    try {
-      const f = await CAP.Plugins.Filesystem.writeFile({ path: nombre, data: txt, directory: "CACHE", encoding: "utf8" });
-      await CAP.Plugins.Share.share({ title: "Respaldo Libreta", dialogTitle: "Guardar o enviar el respaldo", files: [f.uri] });
-      toast("Respaldo listo");
-    } catch (e) { if (!/cancel/i.test(e?.message || "")) { toast("No se pudo crear el respaldo"); return; } }
-  } else if (dl) {
-    try { await dl.save({ filename: nombre, data: txt }); toast("Respaldo descargado"); }
-    catch (e) { if (e?.code !== "declined") toast("No se pudo descargar aquí"); return; }
-  } else {
-    const blob = new Blob([txt], { type: "application/json" }), file = new File([blob], nombre, { type: "application/json" });
-    if (navigator.canShare && navigator.canShare({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
-      try { await navigator.share({ files: [file], title: "Respaldo Libreta" }); } catch (e) { if (e?.name === "AbortError") return; }
-    } else {
-      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click();
-      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
-    }
-    toast("Respaldo listo");
-  }
-  try { localStorage.setItem(LS + "-respaldo", String(Date.now())); } catch (e) {}
+/* ============ Respaldo ============
+   Compartir: Chrome en Android solo deja compartir ciertos tipos de archivo (no .json),
+   por eso el respaldo viaja como .txt; adentro sigue siendo el mismo contenido. */
+const textoRespaldo = () => JSON.stringify({ app: "libreta", version: 1, exportado: new Date().toISOString(), ...data });
+const nombreRespaldo = () => `libreta-respaldo-${hoy()}.txt`;
+const marcarRespaldo = () => { try { localStorage.setItem(LS + "-respaldo", String(Date.now())); } catch (e) {} };
+function ultimoRespaldo() { let t = 0; try { t = +localStorage.getItem(LS + "-respaldo") || 0; } catch (e) {} return t; }
+function puedeCompartirArchivo() {
+  try { return !!(navigator.canShare && navigator.canShare({ files: [new File(["x"], "x.txt", { type: "text/plain" })] })); } catch (e) { return false; }
+}
+function hojaRespaldo() {
+  const ult = ultimoRespaldo(), n = todos().length;
+  const comp = CAP || puedeCompartirArchivo();
+  abrir(`<h3>Respaldo</h3>
+    <p class="sub2" style="margin:-8px 0 14px">${ult ? `Último respaldo: ${diaNombre(new Date(ult).toISOString().slice(0, 10))}.` : "Aún no has hecho ningún respaldo."} Tienes ${n} movimiento${n === 1 ? "" : "s"} guardado${n === 1 ? "" : "s"}.</p>
+    <div class="h4" style="margin-top:0">Sacar una copia</div>
+    <div class="list">
+      ${comp ? `<button class="item" id="rCompartir"><span class="ico">📤</span><span class="grow"><span class="t">Enviar a WhatsApp, Drive o correo</span><span class="s">Lo más recomendado: queda guardado fuera del celular</span></span>${chev}</button>` : ""}
+      <button class="item" id="rGuardar"><span class="ico">💾</span><span class="grow"><span class="t">Guardar en el celular</span><span class="s">Queda en la carpeta Descargas</span></span>${chev}</button>
+      <button class="item" id="rCopiar"><span class="ico">📋</span><span class="grow"><span class="t">Copiar como texto</span><span class="s">Para pegarlo en un chat contigo mismo o en una nota</span></span>${chev}</button>
+    </div>
+    <div class="h4">Recuperar mis datos</div>
+    <div class="list">
+      <button class="item" id="rArchivo"><span class="ico">📂</span><span class="grow"><span class="t">Elegir el archivo de respaldo</span><span class="s">El que guardaste o te enviaste (.txt o .json)</span></span>${chev}</button>
+      <button class="item" id="rPegar"><span class="ico">📝</span><span class="grow"><span class="t">Pegar el texto del respaldo</span><span class="s">Si lo copiaste como texto</span></span>${chev}</button>
+    </div>
+    <p class="hint" id="rRes" style="margin-top:12px"></p>`, s => {
+    const res = t => { const el = s.querySelector("#rRes"); el.innerHTML = t; };
+    const bc = s.querySelector("#rCompartir");
+    if (bc) bc.onclick = async () => {
+      const txt = textoRespaldo(), nombre = nombreRespaldo();
+      if (CAP) {
+        try { const f = await CAP.Plugins.Filesystem.writeFile({ path: nombre, data: txt, directory: "CACHE", encoding: "utf8" });
+          await CAP.Plugins.Share.share({ title: "Respaldo Libreta", dialogTitle: "Enviar el respaldo", files: [f.uri] }); marcarRespaldo(); res("✓ Respaldo enviado."); }
+        catch (e) { if (!/cancel/i.test(e?.message || "")) res("No se pudo enviar. Prueba con <b>Guardar en el celular</b>."); }
+        return;
+      }
+      const file = new File([txt], nombre, { type: "text/plain" });
+      try { await navigator.share({ files: [file], title: "Respaldo Libreta", text: `Respaldo de Libreta del ${fechaCorta(hoy())}` }); marcarRespaldo(); res("✓ Respaldo enviado. Guárdalo donde lo puedas encontrar después."); }
+      catch (e) { if (e?.name !== "AbortError") res("Tu celular no dejó compartir el archivo. Prueba con <b>Guardar en el celular</b> o <b>Copiar como texto</b>."); }
+    };
+    s.querySelector("#rGuardar").onclick = async () => {
+      const txt = textoRespaldo(), nombre = nombreRespaldo();
+      if (HAY_CLAUDE) {
+        try { const dl = await window.claude.use("downloads"); await dl.save({ filename: nombre, data: txt }); marcarRespaldo(); res("✓ Respaldo descargado."); }
+        catch (e) { if (e?.code !== "declined") res("No se pudo descargar aquí. Prueba con <b>Copiar como texto</b>."); }
+        return;
+      }
+      if (CAP) {
+        try { await CAP.Plugins.Filesystem.writeFile({ path: "Download/" + nombre, data: txt, directory: "EXTERNAL_STORAGE", encoding: "utf8", recursive: true }); marcarRespaldo(); res("✓ Guardado en Descargas."); }
+        catch (e) { res("No se pudo guardar. Usa <b>Enviar</b> y elige Drive o Archivos."); }
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([txt], { type: "text/plain" }));
+      const a = document.createElement("a"); a.href = url; a.download = nombre; a.rel = "noopener"; document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 60000);
+      marcarRespaldo();
+      res(`Listo. Búscalo en tu carpeta <b>Descargas</b> como <b>${nombre}</b>. Si no aparece, usa <b>Enviar</b> o <b>Copiar como texto</b>.`);
+    };
+    s.querySelector("#rCopiar").onclick = async () => {
+      const txt = textoRespaldo();
+      try { await navigator.clipboard.writeText(txt); marcarRespaldo(); res("✓ Copiado. Pégalo en un chat contigo mismo de WhatsApp o en una nota. Para recuperar tus datos, cópialo y usa <b>Pegar el texto del respaldo</b>."); }
+      catch (e) { res("Tu celular no dejó copiar. Prueba con otra opción."); }
+    };
+    s.querySelector("#rArchivo").onclick = () => $("#archivo").click();
+    s.querySelector("#rPegar").onclick = () => hojaPegarRespaldo();
+  });
+}
+function hojaPegarRespaldo() {
+  abrir(`<h3>Pegar respaldo</h3>
+    <p class="sub2" style="margin:-8px 0 14px">Mantén presionado el recuadro y toca <b>Pegar</b>.</p>
+    <textarea id="pTxt" rows="7" style="width:100%;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:12px;font-family:monospace;font-size:.8rem" placeholder='{"app":"libreta", …}'></textarea>
+    <div class="actions"><button class="btn full" id="pOk">Restaurar</button></div>`, s => {
+    s.querySelector("#pOk").onclick = () => restaurarTexto(s.querySelector("#pTxt").value);
+  });
+}
+function restaurarTexto(txt) {
+  let p;
+  try { const i = txt.indexOf("{"), f = txt.lastIndexOf("}"); p = JSON.parse(txt.slice(i, f + 1)); } catch (e) { p = null; }
+  if (!p || !p.config || !p.meses) return toast("Eso no es un respaldo válido de Libreta");
+  const n = Object.values(p.meses).reduce((s, m) => s + (m.movs || []).length, 0);
+  if (!confirm(`Este respaldo tiene ${n} movimiento${n === 1 ? "" : "s"}${p.exportado ? ` y es del ${fechaCorta(p.exportado.slice(0, 10))}` : ""}. Va a reemplazar todos tus datos actuales. ¿Continuar?`)) return;
+  const viejos = Object.keys(data.meses);
+  data = { config: p.config, meses: p.meses }; normalizar();
+  guardarConfig();
+  viejos.filter(ym => !data.meses[ym]).forEach(ym => col && col.doc("m-" + ym).delete().catch(() => {}));
+  Object.keys(data.meses).forEach(guardarMes);
+  cerrar(); toast("Respaldo restaurado"); render();
 }
 function importar(file) {
   const fr = new FileReader();
-  fr.onload = () => {
-    try {
-      const p = JSON.parse(fr.result);
-      if (!p.config || !p.meses) throw 0;
-      if (!confirm("Esto reemplaza todos tus datos actuales por los del respaldo. ¿Continuar?")) return;
-      const viejos = Object.keys(data.meses);
-      data = { config: p.config, meses: p.meses };
-      guardarConfig();
-      viejos.filter(ym => !data.meses[ym]).forEach(ym => col && col.doc("m-" + ym).delete().catch(() => {}));
-      Object.keys(data.meses).forEach(guardarMes);
-      toast("Respaldo restaurado"); render();
-    } catch (e) { toast("Ese archivo no es un respaldo válido de Libreta"); }
-  };
+  fr.onload = () => restaurarTexto(String(fr.result || ""));
+  fr.onerror = () => toast("No se pudo leer el archivo");
   fr.readAsText(file);
 }
 function borrarTodo() {
   if (!confirm("Se borrarán todos tus movimientos, fijos, deudas y metas. ¿Seguro?")) return;
   const viejos = Object.keys(data.meses);
-  data = { config: configInicial(), meses: {} };
+  data = { config: configInicial(), meses: {} }; normalizar();
   viejos.forEach(ym => col && col.doc("m-" + ym).delete().catch(() => {}));
   guardarConfig(); toast("Datos borrados"); render();
 }
@@ -2243,7 +2490,7 @@ document.addEventListener("click", e => {
   else if (d.verpersona) hojaVerPersona(d.verpersona);
   else if (d.tcolor) { aplicarTema({ color: d.tcolor }); render(); }
   else if (d.tmodo) { aplicarTema({ modo: d.tmodo }); render(); }
-  else if (d.prestamo) { const [pid, dir] = d.prestamo.split("|"); hojaPrestamo(pid, dir); }
+  else if (d.prestamo) { const [pid, dir, mid] = d.prestamo.split("|"); hojaPrestamo(pid, dir, mid); }
   else if (d.pagar) { const [t, id] = d.pagar.split(":"); hojaPago(t, id); }
   else if (d.aportar) hojaAporte(d.aportar);
   else if (d.salario) hojaSalario(d.salario);
@@ -2262,8 +2509,8 @@ document.addEventListener("click", e => {
   else if (d.editcuenta) hojaCuenta(d.editcuenta);
   else if (d.accion) ({
     nuevo: () => hojaMovimiento(), nuevoFijo: () => hojaFijo(), nuevaDeuda: () => hojaDeuda(), nuevaMeta: () => hojaMeta(),
-    nuevaCuenta: () => hojaCuenta(), perfil: hojaPerfil, nuevaTarjeta: () => hojaTarjeta(), nuevoBolsillo: () => hojaBolsillo(), nuevaPersona: () => hojaPrestamo(null, "di"), favoritos: hojaFavoritos, instalar, claude: pedirClaude, gemini: hojaGemini, categorias: () => hojaCategorias(), desglose: hojaDesglose, proximos: hojaProximos, consejos: hojaConsejos,
-    fijosAdmin: hojaFijosAdmin, prestaciones: hojaPrestaciones, legal: hojaLegal, exportar, importar: () => $("#archivo").click(), borrarTodo,
+    nuevaCuenta: () => hojaCuenta(), perfil: hojaPerfil, nuevaTarjeta: () => hojaTarjeta(), nuevoBolsillo: () => hojaBolsillo(), nuevaPersona: () => hojaPrestamo(null, "fiado"), favoritos: hojaFavoritos, instalar, claude: pedirClaude, gemini: hojaGemini, categorias: () => hojaCategorias(), desglose: hojaDesglose, proximos: hojaProximos, consejos: hojaConsejos,
+    fijosAdmin: hojaFijosAdmin, prestaciones: hojaPrestaciones, legal: hojaLegal, respaldo: hojaRespaldo, exportar: hojaRespaldo, importar: () => $("#archivo").click(), borrarTodo,
   })[d.accion]?.();
 });
 document.addEventListener("change", e => { if (e.target.id === "archivo" && e.target.files[0]) { importar(e.target.files[0]); e.target.value = ""; } });
